@@ -329,7 +329,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					}break;
 				}
 			}
-			
+			if(!GlobalRunning) break;
 			
             DeviceContext->IASetVertexBuffers(0,1,&VertexBuffer,Strides,Offsets);
             DeviceContext->VSSetShader(ActiveVertexShader,NULL,0);
@@ -342,8 +342,12 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
             DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 #endif
            
-            //ViewPort
+			RECT WindowRect;
+			ASSERT(GetWindowRect(Window,&WindowRect));
+			Width = WindowRect.right - WindowRect.left;
+			Height = WindowRect.bottom - WindowRect.top;
 			
+            //ViewPort
             D3D11_VIEWPORT ViewPort;
             ViewPort.TopLeftX = 0.0f;
             ViewPort.TopLeftY = 0.0f;
@@ -351,8 +355,11 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
             ViewPort.Height = (float)Height;
             ViewPort.MinDepth = 0.0f;
             ViewPort.MaxDepth = 1.0f;
+			const float RGBA[4] = {0,0,0,1};
+			DeviceContext->ClearRenderTargetView(RenderTargetView, RGBA);
             DeviceContext->RSSetViewports(1,&ViewPort);
             DeviceContext->Draw(VertexCount, 0);
+			
             SwapChain->Present(1, 0);
             
             
