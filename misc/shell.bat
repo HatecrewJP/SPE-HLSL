@@ -4,4 +4,3 @@ call subst v: D:\GitRepos\Direct3D
 set path=V:\misc;%path%
 V:
 cd code
-npp *
