@@ -95,7 +95,7 @@ static ID3DBlob *Win32CompileShaderFromFile(LPCWSTR Filename, LPCSTR Entrypoint,
 	ID3DBlob *BlobError;
 	
 	HRESULT res;
-	if(!((res=D3DCompileFromFile(Filename, NULL, NULL, Entrypoint, Target, D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY, 0, &BlobCode, &BlobError)) == S_OK)){
+	if(!((res=D3DCompileFromFile(Filename, NULL, NULL, Entrypoint, Target, D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY | D3DCOMPILE_DEBUG, 0, &BlobCode, &BlobError)) == S_OK)){
 		if(BlobError){
 			LPCSTR Buffer = (LPCSTR)BlobError->GetBufferPointer();
 			OutputDebugStringA(Buffer);
@@ -234,7 +234,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 		
 		if(D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,D3D11_CREATE_DEVICE_DEBUG ,FeatureLevels,FeatureLevelCount,D3D11_SDK_VERSION,
                              &Device,&CurrentFeatureLevel,&DeviceContext)==S_OK){
-			OutputDebugStringA("Device Created");
+			OutputDebugStringA("Device Created\n");
 			
 			
 			//retrieve IDXGI Interfaces
@@ -251,12 +251,12 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			void *CompiledVSShaderCode = BlobVSCode->GetBufferPointer();
 			size_t VSShaderSize = BlobVSCode->GetBufferSize();
 			ASSERT(CompiledVSShaderCode);
-			OutputDebugStringA("VertexShader compiled");
+			OutputDebugStringA("VertexShader compiled\n");
 			
 			//Vertex Shader 
 			VertexShader = Win32CreateVertexShader(Device,CompiledVSShaderCode,VSShaderSize);
 			ASSERT(VertexShader);
-			OutputDebugStringA("Vertex Shader created");
+			OutputDebugStringA("Vertex Shader created\n");
 			ID3D11InputLayout *VSInputLayout = Win32CreateVertexInputLayout(Device,DeviceContext,CompiledVSShaderCode,VSShaderSize);
 			DeviceContext->IASetInputLayout(VSInputLayout);
 			
@@ -374,15 +374,15 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				if(Device->CreateRenderTargetView(RenderTargetResource,NULL,&RenderTargetView)==S_OK){
 					ASSERT(RenderTargetView);
 					
-					OutputDebugStringA("RenderTargetView created");
+					OutputDebugStringA("RenderTargetView created\n");
 					
 				}
 				else{
-					OutputDebugStringA("RenderTargetView failed");
+					OutputDebugStringA("RenderTargetView failed\n");
 				}
 			}
 			else{
-				OutputDebugStringA("RenderTargetResource failed");
+				OutputDebugStringA("RenderTargetResource failed\n");
 			}
 			
 			ID3DBlob *HSBlob = Win32CompileShaderFromFile(L"HullShader.hlsl","HSEntry","hs_5_0");
