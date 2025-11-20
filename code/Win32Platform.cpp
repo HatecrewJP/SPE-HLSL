@@ -26,7 +26,7 @@ global_variable ID3D11Device 			*GlobalDevice 			= NULL;
 global_variable IDXGISwapChain1 		*GlobalSwapChain 		= NULL;
 global_variable ID3D11DeviceContext 	*GlobalDeviceContext 	= NULL;
 global_variable ID3D11RenderTargetView 	*GlobalRenderTargetView = NULL;
-global_variable ID3D11Resource 			*GlobalFrameBuffer 		= NULL;
+global_variable ID3D11Texture2D			*GlobalFrameBuffer 		= NULL;
 
 global_variable ID3D11PixelShader 	*GlobalActivePixelShader;
 global_variable ID3D11VertexShader 	*GlobalActiveVertexShader;
@@ -48,6 +48,8 @@ global_variable ID3D11PixelShader* 		GlobalPixelShaderArray[MAX_PIXEL_SHADER_COU
 global_variable IndexedGeometryObject GlobalSquare;
 global_variable IndexedGeometryObject GlobalHexagon;
 
+global_variable ID3D11ComputeShader *GlobalComputeShader = nullptr;
+
 
 LRESULT Wndproc(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam){
 	switch(Message){
@@ -67,7 +69,7 @@ internal void ResizeSwapChainBuffers(UINT NewWidth, UINT NewHeight){
 	GlobalRenderTargetView->Release();
 	GlobalRenderTargetView = nullptr;
 	GlobalSwapChain->ResizeBuffers(0,NewWidth,NewHeight,DXGI_FORMAT_UNKNOWN,0);
-	if(GlobalSwapChain->GetBuffer(0,__uuidof(ID3D11Resource),(void**)&GlobalFrameBuffer)==S_OK){
+	if(GlobalSwapChain->GetBuffer(0,__uuidof(ID3D11Texture2D),(void**)&GlobalFrameBuffer)==S_OK){
 		ASSERT(GlobalFrameBuffer);
 		//RenderTargetView
 		if(GlobalDevice->CreateRenderTargetView(GlobalFrameBuffer,NULL,&GlobalRenderTargetView)==S_OK){
@@ -139,7 +141,7 @@ internal IDXGISwapChain1* Win32GetSwapChain(ID3D11Device *Device, HWND Window,ID
 	
 }
 
-internal ID3DBlob *Win32CompileShaderFromFile(LPCWSTR Filename, LPCSTR Entrypoint, LPCSTR Target){
+internal ID3DBlob* Win32CompileShaderFromFile(LPCWSTR Filename, LPCSTR Entrypoint, LPCSTR Target){
 	ID3DBlob *BlobCode;
 	ID3DBlob *BlobError;
 	
@@ -156,7 +158,7 @@ internal ID3DBlob *Win32CompileShaderFromFile(LPCWSTR Filename, LPCSTR Entrypoin
 	return BlobCode;
 }
 
-internal ID3D11Buffer * Win32CreateVertexBuffer(ID3D11Device *Device,void* VertexBufferData, UINT VertexBufferSize){
+internal ID3D11Buffer* Win32CreateVertexBuffer(ID3D11Device *Device,void* VertexBufferData, UINT VertexBufferSize){
 	D3D11_BUFFER_DESC VertexBufferDesc;
 	VertexBufferDesc.ByteWidth = VertexBufferSize;
 	VertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -341,11 +343,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 		const D3D_FEATURE_LEVEL FeatureLevels[]={
 			D3D_FEATURE_LEVEL_11_1,
 			D3D_FEATURE_LEVEL_11_0,
-			D3D_FEATURE_LEVEL_10_1,
-			D3D_FEATURE_LEVEL_10_0,
-			D3D_FEATURE_LEVEL_9_3,
-			D3D_FEATURE_LEVEL_9_2,
-			D3D_FEATURE_LEVEL_9_1};
+			};
 		UINT FeatureLevelCount = sizeof(FeatureLevels)/sizeof(FeatureLevels[0]);
 		
 		RECT ClientRect;
@@ -550,6 +548,16 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			res = GlobalDevice->CreateRasterizerState(&RasterizerDesc,&RasterizerState);
 			ASSERT(RasterizerState);
 			
+			//ComputeShader
+			ID3DBlob *CSBlob = Win32CompileShaderFromFile(L"ComputeShader.hlsl","CSEntry","cs_5_0");
+			ASSERT(CSBlob);
+			void *CompiledCS = CSBlob->GetBufferPointer();
+			SIZE_T CompiledCSSize = CSBlob->GetBufferSize();
+			res = GlobalDevice->CreateComputeShader(CompiledCS,CompiledCSSize,nullptr,&GlobalComputeShader);
+			ASSERT(res==S_OK);
+			
+			
+			
 			
 			//Initializing active shader
 			GlobalActivePixelShader 	= GlobalPixelShaderArray[1];
@@ -651,10 +659,13 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				GlobalDeviceContext->DrawIndexed(GlobalActiveIndexCount, 0, 0);
 
 				
-				
+				GlobalDeviceContext->CSSetShader(GlobalComputeShader,nullptr,0);
+				GlobalDeviceContext->Dispatch(1,1,1);
 				
 				
 				GlobalSwapChain->Present(0, 0);
+				
+			
 				
 			
 				
