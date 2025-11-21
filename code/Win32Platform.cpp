@@ -5,6 +5,9 @@
 #define MAX_PIXEL_SHADER_COUNT 32
 #define ArrayCount(x) (sizeof(x)/sizeof((x)[0]))
 
+#define KB(x) (x)*1024
+#define MB(x) KB(x)*1024
+#define GB(x) MB(x)*1024
 
 
 #include <d3d11.h>
@@ -49,7 +52,7 @@ global_variable IndexedGeometryObject GlobalSquare;
 global_variable IndexedGeometryObject GlobalHexagon;
 
 global_variable ID3D11ComputeShader *GlobalComputeShader = nullptr;
-
+global_variable ID3D11UnorderedAccessView *GlobalUAV = nullptr;
 
 LRESULT Wndproc(HWND WindowHandle, UINT Message, WPARAM WParam, LPARAM LParam){
 	switch(Message){
@@ -556,6 +559,36 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			res = GlobalDevice->CreateComputeShader(CompiledCS,CompiledCSSize,nullptr,&GlobalComputeShader);
 			ASSERT(res==S_OK);
 			
+			UINT UAVBufferSize = MB(64);
+			ID3D11Buffer *UAVBuffer = nullptr;
+			D3D11_BUFFER_DESC UAVBufferDesc;
+			UAVBufferDesc.ByteWidth = UAVBufferSize;
+			UAVBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+			UAVBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+			UAVBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
+			UAVBufferDesc.MiscFlags = 0;
+			UAVBufferDesc.StructureByteStride = 0;
+			
+			void *UAVData = VirtualAlloc(nullptr,UAVBufferSize,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE);
+			ASSERT(UAVData);
+			D3D11_SUBRESOURCE_DATA UAVSubresourceData;
+			UAVSubresourceData.pSysMem = UAVData;
+			UAVSubresourceData.SysMemPitch = 0;
+			UAVSubresourceData.SysMemSlicePitch = 0;
+			ASSERT(GlobalDevice->CreateBuffer(&UAVBufferDesc,&UAVSubresourceData,&UAVBuffer)==S_OK);
+			
+			
+			D3D11_BUFFER_UAV UAVElementDesc;
+			UAVElementDesc.FirstElement = 0;
+			UAVElementDesc.NumElements = UAVBufferSize / 4;
+			UAVElementDesc.Flags = 0;
+			
+			D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
+			UAVDesc.Format = DXGI_FORMAT_R16G16_UINT;
+			UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+			UAVDesc.Buffer = UAVElementDesc;
+
+			ASSERT(GlobalDevice->CreateUnorderedAccessView(UAVBuffer,&UAVDesc,&GlobalUAV)==S_OK);
 			
 			
 			
@@ -658,7 +691,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 #endif	
 				GlobalDeviceContext->DrawIndexed(GlobalActiveIndexCount, 0, 0);
 
-				
+				GlobalDeviceContext->CSSetUnorderedAccessViews(0,1,&GlobalUAV,nullptr);
 				GlobalDeviceContext->CSSetShader(GlobalComputeShader,nullptr,0);
 				GlobalDeviceContext->Dispatch(1,1,1);
 				
