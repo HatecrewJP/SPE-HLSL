@@ -37,7 +37,7 @@ global_variable unsigned int PipelineStateCount = 0;
 global_variable GraphicsPipelineState ActivePipelineStateArray[MAX_PIPELINE_STATES];
 global_variable unsigned int ActivePipelineStateCount = 0;
 
-
+global_variable const int Zero = 0;
 
 global_variable UINT GlobalPixelShaderInArrayCount = 0;
 global_variable UINT GlobalVertexBufferCount = 0;
@@ -54,6 +54,7 @@ global_variable UINT GlobalOffsets[1];
 
 global_variable ID3D11Buffer* 			GlobalVertexBufferArray[32] = {};
 global_variable ID3D11Buffer* 			GlobalIndexBufferArray[64] 	= {};
+global_variable ID3D11InputLayout *VSInputLayoutArray[64] = {};
 
 global_variable ID3D11VertexShader* 	GlobalVertexShaderArray[64];
 global_variable ID3D11HullShader* 		GlobalHullShaderArray[64];
@@ -135,7 +136,10 @@ internal void MessageLoop(ID3D11Device* Device){
 				}
 				else if(VKCode == 'T'){
 					GlobalTesselationActive ^=true;
-					
+				}
+				else if(VKCode == 'C'){
+					ClearActivePipelineState();
+					PushPipelineState(&PipelineStateArray[6]);
 				}
 				else if(VKCode == 'G'){
 					GlobalGeometryShaderActive ^=true;
@@ -251,7 +255,6 @@ internal ShaderCode Win32CompileShaderFromFile(LPCWSTR Filename, LPCSTR Entrypoi
 	
 	Result.Code = BlobCode->GetBufferPointer();
 	Result.Size = BlobCode->GetBufferSize();
-	
 	return Result;
 }
 
@@ -413,7 +416,52 @@ internal UINT SetPipelineState(
 	return PipelineState->IndexCount;
 }
 
-
+internal GraphicsPipelineState BuildPipelineState(
+	ID3D11Buffer* *VertexBufferArray,
+	UINT VertexBufferCount,
+	UINT *StrideArray,
+	UINT *OffsetArray,
+	ID3D11Buffer *IndexBuffer,
+	DXGI_FORMAT IndexBufferFormat,
+	UINT IndexCount,
+	ID3D11InputLayout *InputLayout,
+	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology,
+	ID3D11VertexShader *VertexShader,
+	ID3D11HullShader *HullShader,
+	ID3D11DomainShader *DomainShader,
+	ID3D11GeometryShader *GeometryShader,
+	ID3D11RasterizerState *RasterizerState,
+	ID3D11PixelShader* *PixelShader,
+	ID3D11RenderTargetView* *RenderTargetViewArray,
+	UINT RenderTargetViewCount,
+	char *Description = "Unknown"
+	)
+{
+	GraphicsPipelineState NewPipelineState = {};
+	NewPipelineState.VertexBufferArray = VertexBufferArray;
+	NewPipelineState.VertexBufferCount = VertexBufferCount;
+	NewPipelineState.StrideArray = StrideArray;
+	NewPipelineState.OffsetArray = OffsetArray;
+	NewPipelineState.IndexBuffer = IndexBuffer;
+	NewPipelineState.IndexBufferFormat = IndexBufferFormat;
+	NewPipelineState.IndexCount = IndexCount;
+	NewPipelineState.InputLayout = InputLayout;
+	NewPipelineState.PrimitiveTopology = PrimitiveTopology;
+	NewPipelineState.VertexShader = VertexShader;
+	NewPipelineState.HullShader = HullShader;
+	NewPipelineState.DomainShader = DomainShader;
+	NewPipelineState.GeometryShader = GeometryShader;
+	NewPipelineState.RasterizerState = RasterizerState;
+	NewPipelineState.PixelShader = PixelShader;
+	NewPipelineState.RenderTargetViewArray = RenderTargetViewArray;
+	NewPipelineState.RenderTargetViewCount = 1;
+	NewPipelineState.Description = Description;
+	return NewPipelineState;
+}
+internal void AddPipelineStateToArray(GraphicsPipelineState PipelineState){
+	PipelineStateArray[PipelineStateCount] = PipelineState;
+	PipelineStateCount++;
+}
 
 internal void SetComputeShaderState(ID3D11DeviceContext *DeviceContext, ComputeShaderState &CSState){
 	DeviceContext->CSSetUnorderedAccessViews(0,CSState.UnorderedAccessViewCount,CSState.UnorderedAccessViewArray,nullptr);
@@ -575,18 +623,33 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			//Swap Chain
 			GlobalSwapChain = Win32GetSwapChain(GlobalDevice,Window,IdxgiFactory);
 			
-			//Vertex Shader 
-			ShaderCode VSCode = Win32CompileShaderFromFile(L"VertexShader.hlsl","VSEntry","vs_5_0");
-			GlobalVertexShaderArray[0] = Win32CreateVertexShader(GlobalDevice,VSCode.Code,VSCode.Size);
-			ASSERT(GlobalVertexShaderArray[0]);
-			
-			OutputDebugStringA("Vertex Shader created\n");
-			//Input Layout
-			ID3D11InputLayout *VSInputLayout = Win32CreateVertexInputLayout(
+			//Vertex Shader
+			{
+				ShaderCode VSCode = Win32CompileShaderFromFile(L"VertexShader.hlsl","VSEntry","vs_5_0");
+				ASSERT(VSCode.Code);
+				GlobalVertexShaderArray[0] = Win32CreateVertexShader(GlobalDevice,VSCode.Code,VSCode.Size);
+				ASSERT(GlobalVertexShaderArray[0]);
+				OutputDebugStringA("Vertex Shader created\n");
+				//Input Layout
+				VSInputLayoutArray[0] = Win32CreateVertexInputLayout(
 				GlobalDevice,
 				GlobalDeviceContext,
 				VSCode.Code,
 				VSCode.Size);
+			}
+			{
+				ShaderCode VSCode = Win32CompileShaderFromFile(L"VertexShaderCube.hlsl","VSEntry","vs_5_0");
+				ASSERT(VSCode.Code);
+				GlobalVertexShaderArray[1] = Win32CreateVertexShader(GlobalDevice,VSCode.Code,VSCode.Size);
+				ASSERT(GlobalVertexShaderArray[0]);
+				VSInputLayoutArray[1] = Win32CreateVertexInputLayout(
+				GlobalDevice,
+				GlobalDeviceContext,
+				VSCode.Code,
+				VSCode.Size);
+			}
+			
+			
 			
 			
 			//Square Object
@@ -636,6 +699,41 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				ArrayCount(HexagonIndices));
 			
 			
+			float CubeVertices[]{
+				0.00f,0.00f, 0.00f, //0
+				1.00f,0.00f, 0.00f, //1
+				0.00f,1.00f, 0.00f, //2
+				1.00f,1.00f, 0.00f, //3
+				0.00f,0.00f,-1.00f, //4
+				1.00f,0.00f,-1.00f, //5
+				0.00f,1.00f,-1.00f, //6
+				1.00f,1.00f,-1.00f, //7
+			};
+			UINT CubeIndices[]{
+				//Front
+				0,2,3,
+				0,3,1,
+				//Back
+				5,6,4,
+				5,7,6,
+				//Left
+				4,6,2,
+				4,2,0,
+				//Right
+				1,3,7,
+				1,7,5,
+				//Top
+				2,6,7,
+				2,7,3,
+				//Bottom
+				0,4,5,
+				0,5,1
+			};
+			CreateVBForIndexedGeometry(
+				CubeVertices,
+				ArrayCount(CubeVertices),
+				CubeIndices,
+				ArrayCount(CubeIndices));
 			
 			
 			//Adding PixelShaders
@@ -648,17 +746,19 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			
 			//HUllShader
 			ShaderCode HSCode = Win32CompileShaderFromFile(L"HullShader.hlsl","HSEntry","hs_5_0");
-			
+			ASSERT(HSCode.Code);
 			res = GlobalDevice->CreateHullShader(HSCode.Code,HSCode.Size,nullptr,&GlobalHullShaderArray[0]);
 			ASSERT(res==S_OK);
 			
 			//DomainShader
 			ShaderCode DSCode = Win32CompileShaderFromFile(L"DomainShader.hlsl","DSEntry","ds_5_0");
+			ASSERT(DSCode.Code);
 			res = GlobalDevice->CreateDomainShader(DSCode.Code,DSCode.Size,nullptr,&GlobalDomainShaderArray[0]);
 			ASSERT(res==S_OK);
 			
 			//GeometryShader
 			ShaderCode GSCode = Win32CompileShaderFromFile(L"GeometryShader.hlsl","GSEntry","gs_5_0");
+			ASSERT(GSCode.Code);
 			res = GlobalDevice->CreateGeometryShader(GSCode.Code,GSCode.Size,nullptr,&GlobalGeometryShaderArray[0]);
 			ASSERT(res==S_OK);
 			
@@ -678,6 +778,22 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			ID3D11RasterizerState *RasterizerState = nullptr;
 			res = GlobalDevice->CreateRasterizerState(&RasterizerDesc,&RasterizerState);
 			ASSERT(RasterizerState);
+
+			D3D11_RASTERIZER_DESC RasterizerDesc2;
+			RasterizerDesc2.FillMode = D3D11_FILL_WIREFRAME;
+			RasterizerDesc2.CullMode = D3D11_CULL_NONE;
+			RasterizerDesc2.FrontCounterClockwise = FALSE;
+			RasterizerDesc2.DepthBias = 0;
+			RasterizerDesc2.DepthBiasClamp = 1.0f;
+			RasterizerDesc2.SlopeScaledDepthBias = 0.0f;
+			RasterizerDesc2.DepthClipEnable = FALSE;
+			RasterizerDesc2.ScissorEnable = FALSE;
+			RasterizerDesc2.MultisampleEnable = FALSE;
+			RasterizerDesc2.AntialiasedLineEnable = FALSE;
+			
+			ID3D11RasterizerState *RasterizerState2 = nullptr;
+			res = GlobalDevice->CreateRasterizerState(&RasterizerDesc2,&RasterizerState2);
+			ASSERT(RasterizerState2);
 			
 			
 			//FrameBuffer
@@ -696,161 +812,125 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				OutputDebugStringA("SwapChain no Buffer\n");
 			}
 			
-			{
-				//Background Square
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[0];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[0].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[0];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(SquareIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.PixelShader = &GlobalPixelShaderArray[0];
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
-			{
-				//Lines Square GS
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[0];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[0].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[0];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(SquareIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.GeometryShader = GlobalGeometryShaderArray[0];
-				NewPipelineState.RasterizerState = RasterizerState;
-				NewPipelineState.PixelShader = &GlobalAnimationShader;
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
-			{
-				//Lines Square Tesselation
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[0];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[0].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[0];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(SquareIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.HullShader = GlobalHullShaderArray[0];
-				NewPipelineState.DomainShader = GlobalDomainShaderArray[0];
-				NewPipelineState.RasterizerState = RasterizerState;
-				NewPipelineState.PixelShader = &GlobalAnimationShader;
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[0],1,
+					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					GlobalVertexShaderArray[0],
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&GlobalPixelShaderArray[0],
+					&GlobalRenderTargetView, 1,
+					"BackgroundSquare"));
+			
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[0],1,
+					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					GlobalVertexShaderArray[0],
+					nullptr,
+					nullptr,
+					GlobalGeometryShaderArray[0],
+					RasterizerState,
+					&GlobalAnimationShader,
+					&GlobalRenderTargetView, 1,
+					"SquareGeometryShader"));
+			
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[0],1,
+					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
+					GlobalVertexShaderArray[0],
+					GlobalHullShaderArray[0],
+					GlobalDomainShaderArray[0],
+					nullptr,
+					RasterizerState,
+					&GlobalAnimationShader,
+					&GlobalRenderTargetView, 1,
+					"SquareTesselation"));
 			
 			
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[1],1,
+					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					GlobalVertexShaderArray[0],
+					nullptr,
+					nullptr,
+					nullptr,
+					nullptr,
+					&GlobalPixelShaderArray[0],
+					&GlobalRenderTargetView, 1,
+					"BackgroundHexagon"));
 			
-			{
-				//Background Hexagon
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[1];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[1].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[1];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(HexagonIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.PixelShader = &GlobalPixelShaderArray[2];
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
-			{
-				//Lines Hexagon GS
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[1];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[1].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[1];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(HexagonIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.GeometryShader = GlobalGeometryShaderArray[0];
-				NewPipelineState.RasterizerState = RasterizerState;
-				NewPipelineState.PixelShader = &GlobalAnimationShader;
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
-			{
-				//Lines Hexagon Tesselation
-				GraphicsPipelineState NewPipelineState = {};
-				NewPipelineState.VertexBufferArray = &GlobalVertexBufferArray[1];
-				NewPipelineState.VertexBufferCount = 1;
-				{
-					UINT StrideArray[1] = {GlobalIndexedGeometryArray[1].VertexSize};
-					UINT OffsetArray[1] = {};
-					NewPipelineState.StrideArray = StrideArray;
-					NewPipelineState.OffsetArray = OffsetArray;
-				}
-				NewPipelineState.IndexBuffer = GlobalIndexBufferArray[1];
-				NewPipelineState.IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-				NewPipelineState.IndexCount = ArrayCount(HexagonIndices);
-				NewPipelineState.InputLayout = VSInputLayout;
-				NewPipelineState.PrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST;
-				NewPipelineState.VertexShader = GlobalVertexShaderArray[0];
-				NewPipelineState.HullShader = GlobalHullShaderArray[0];
-				NewPipelineState.DomainShader = GlobalDomainShaderArray[0];
-				NewPipelineState.RasterizerState = RasterizerState;
-				NewPipelineState.PixelShader = &GlobalAnimationShader;
-				NewPipelineState.RenderTargetViewArray = &GlobalRenderTargetView;
-				NewPipelineState.RenderTargetViewCount = 1;
-				PipelineStateArray[PipelineStateCount] = NewPipelineState;
-				PipelineStateCount++;
-			}
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[1],1,
+					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					GlobalVertexShaderArray[0],
+					nullptr,
+					nullptr,
+					GlobalGeometryShaderArray[0],
+					RasterizerState,
+					&GlobalAnimationShader,
+					&GlobalRenderTargetView, 1,
+					"HexagonGeometryShader"));
+			
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[1],1,
+					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
+					VSInputLayoutArray[0],
+					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
+					GlobalVertexShaderArray[0],
+					GlobalHullShaderArray[0],
+					GlobalDomainShaderArray[0],
+					nullptr,
+					RasterizerState,
+					&GlobalAnimationShader,
+					&GlobalRenderTargetView, 1,
+					"HexagoTesselation"));
+
+			AddPipelineStateToArray(BuildPipelineState(
+					&GlobalVertexBufferArray[2],1,
+					(UINT*)&GlobalIndexedGeometryArray[2].VertexSize,
+					(UINT*)&Zero,
+					GlobalIndexBufferArray[2],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
+					VSInputLayoutArray[1],
+					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					GlobalVertexShaderArray[1],
+					nullptr,
+					nullptr,
+					nullptr,
+					RasterizerState2,
+					&GlobalAnimationShader,
+					&GlobalRenderTargetView, 1,
+					"Cube"));
+			
+		
 			
 			
 			//ComputeShader
 			ShaderCode CSCode = Win32CompileShaderFromFile(L"ComputeShader.hlsl","CSEntry","cs_5_0");
+			ASSERT(CSCode.Code);
 			res = GlobalDevice->CreateComputeShader(CSCode.Code,CSCode.Size,nullptr,&GlobalComputeShader);
 			ASSERT(res==S_OK);
 			UpdateCSTexture(Width,Height);
@@ -871,7 +951,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				PushPipelineState(&PipelineStateArray[1]);
 			}
 			
-			GlobalRunning =  true;
+			GlobalRunning = true;
 			//Loop
 			while(GlobalRunning){
 				MessageLoop(GlobalDevice);

@@ -30,6 +30,7 @@ struct GraphicsPipelineState{
 	//OMS
 	ID3D11RenderTargetView* *RenderTargetViewArray;
 	UINT RenderTargetViewCount;
+	char *Description;
 };
 
 struct ComputeShaderState{

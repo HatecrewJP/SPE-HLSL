@@ -50,10 +50,6 @@ internal ID3D11PixelShader* Win32CreatePixelShader(
 	LPCSTR Target);
 	
 //PipelineStates
-
-internal void SetComputeShaderState(ID3D11DeviceContext *DeviceContext, ComputeShaderState &CSState);
-internal void ClearActivePipelineState();
-internal void PushPipelineState(GraphicsPipelineState *State);
 internal UINT SetPipelineState(
 	ID3D11DeviceContext *Device,
 	GraphicsPipelineState *PipelineState,
@@ -61,6 +57,33 @@ internal UINT SetPipelineState(
 	UINT ViewportCount,
 	D3D11_RECT *ScissorRectArray,
 	UINT ScissorRectCount);
+	
+internal GraphicsPipelineState BuildPipelineState(
+	ID3D11Buffer* *VertexBufferArray,
+	UINT VertexBufferCount,
+	UINT *StrideArray,
+	UINT *OffsetArray,
+	ID3D11Buffer *IndexBuffer,
+	DXGI_FORMAT IndexBufferFormat,
+	UINT IndexCount,
+	ID3D11InputLayout *InputLayout,
+	D3D11_PRIMITIVE_TOPOLOGY PrimitiveTopology,
+	ID3D11VertexShader *VertexShader,
+	ID3D11HullShader *HullShader,
+	ID3D11DomainShader *DomainShader,
+	ID3D11GeometryShader *GeometryShader,
+	ID3D11RasterizerState *RasterizerState,
+	ID3D11PixelShader* *PixelShader,
+	ID3D11RenderTargetView* *RenderTargetViewArray,
+	UINT RenderTargetViewCount,
+	char *Description
+	);
+
+internal void AddPipelineStateToArray(GraphicsPipelineState PipelineState);
+internal void SetComputeShaderState(ID3D11DeviceContext *DeviceContext, ComputeShaderState &CSState);
+internal void ClearActivePipelineState();
+internal void PushPipelineState(GraphicsPipelineState *State);
+
 
 //miscs
 internal int Win32AddPixelShaderToArray(
