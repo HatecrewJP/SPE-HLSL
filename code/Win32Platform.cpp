@@ -32,6 +32,7 @@ global_variable bool GlobalAnimationIsActive = false;
 global_variable bool GlobalTesselationActive = false;
 global_variable bool GlobalGeometryShaderActive = true;
 
+
 global_variable GraphicsPipelineState PipelineStateArray[MAX_PIPELINE_STATES];
 global_variable unsigned int PipelineStateCount = 0;
 global_variable GraphicsPipelineState ActivePipelineStateArray[MAX_PIPELINE_STATES];
@@ -63,6 +64,7 @@ global_variable ID3D11GeometryShader* 	GlobalGeometryShaderArray[64];
 global_variable ID3D11PixelShader* 		GlobalPixelShaderArray[MAX_PIXEL_SHADER_COUNT];
 
 global_variable ID3D11PixelShader *GlobalAnimationShader = nullptr;
+
 
 global_variable IndexedGeometryObject GlobalIndexedGeometryArray[64];
 global_variable unsigned int IndexedGeometryCount = 0;
@@ -925,7 +927,28 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalRenderTargetView, 1,
 					"Cube"));
 			
-		
+			
+			float AngleData[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+			//Buffer for Angle
+			D3D11_BUFFER_DESC AngleConstantBufferDesc;
+			AngleConstantBufferDesc.ByteWidth = 16;
+			AngleConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+			AngleConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			AngleConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			AngleConstantBufferDesc.MiscFlags = 0;
+			AngleConstantBufferDesc.StructureByteStride = 0;
+			
+			D3D11_SUBRESOURCE_DATA AngleConstantBufferSubresourceData;
+			AngleConstantBufferSubresourceData.pSysMem = AngleData;
+			AngleConstantBufferSubresourceData.SysMemPitch = 0;
+			AngleConstantBufferSubresourceData.SysMemSlicePitch = 0;
+			ID3D11Buffer *AngleConstantBuffer = nullptr;
+			GlobalDevice->CreateBuffer(&AngleConstantBufferDesc,&AngleConstantBufferSubresourceData,&AngleConstantBuffer);
+			ASSERT(AngleConstantBuffer);
+			
+			//SRV
+			
+			
 			
 			
 			//ComputeShader
@@ -950,7 +973,8 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			if(GlobalGeometryShaderActive){
 				PushPipelineState(&PipelineStateArray[1]);
 			}
-			
+			GlobalDeviceContext->VSSetConstantBuffers(0,1,&AngleConstantBuffer);
+
 			GlobalRunning = true;
 			//Loop
 			while(GlobalRunning){
@@ -969,7 +993,8 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				}
 				
 				static unsigned int AnimationCount = 1;
-				
+				global_variable float RotationAngle = 0;
+
 				static int AnimationIndex = 0;
 				if(GlobalAnimationIsActive){
 					AnimationCount = (AnimationCount+1)%(60);
@@ -977,6 +1002,8 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 						AnimationIndex = (AnimationIndex+1)%GlobalPixelShaderInArrayCount;
 						GlobalAnimationShader = GlobalPixelShaderArray[AnimationIndex];
 					}
+					
+					RotationAngle+=0.5f;
 				}
 				
 				D3D11_VIEWPORT ViewPort;
@@ -996,7 +1023,8 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				
 				const float RGBA[4] = {0,0,0,1};
 				GlobalDeviceContext->ClearRenderTargetView(GlobalRenderTargetView, RGBA);
-
+				
+				
 				for(unsigned int i = 0; i< ActivePipelineStateCount;i++){
 					UINT DrawIndexCount = SetPipelineState(GlobalDeviceContext,&ActivePipelineStateArray[i],&ViewPort,1,&ScissorRect,1);
 					ASSERT(DrawIndexCount);

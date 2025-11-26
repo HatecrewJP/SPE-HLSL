@@ -1,6 +1,10 @@
 
 #define PI 3.14159265359
 #define DegreeToRad(x) ((x)*PI/180)
+
+cbuffer CBufferAngle{
+	float RotationAngle;
+};
 struct vs_input
 {
 	float3 vPosition : SV_Position;
@@ -53,12 +57,11 @@ vs_output VSEntry(const vs_input input)
 		0.0f,1.0f,0.0f,0.0f,
 		0.0f,0.0f,-1.0f,0.0f,
 		0.0f,0.0f,0.0f,1.0f};
-	
 	float4 Scaling = {0.5f,0.5f,0.5f,1};
 	float4 Offset = {0.3,0.2,0,0};
 	Input *= Scaling;
 	Input = RotationYaw(Input,0);
-	Input = RotationPitch(Input,45);
+	Input = RotationPitch(Input,RotationAngle);
 	Input = RotationRoll(Input,45);
 	//Input += Offset;
 	output.vPosition = mul(Input,OrthographicProjectionMatrix);
