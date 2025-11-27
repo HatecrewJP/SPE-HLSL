@@ -2,17 +2,21 @@
 struct ps_input
 {
 	float4 vPosition : SV_Position;
+	float3 Normal : NORMAL;
 };
 
 struct ps_output
 {
 	float4 color : SV_Target0;
 };
+float3 LightSource = {-1.0f,3.0f,-2.0f};
 
 ps_output PSEntry(const ps_input input)
 {
 	ps_output output;
 	
-	output.color = float4(0,0,1,1);
+	float3 LightingMultiplier = abs(dot(input.Normal.xyz,LightSource));
+	
+	output.color = float4(0,0,1,1) * float4(LightingMultiplier,1);
 	return output;
 }

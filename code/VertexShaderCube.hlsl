@@ -10,11 +10,13 @@ cbuffer CBufferAngle{
 struct vs_input
 {
 	float3 vPosition : SV_Position;
+	float3 Normal : NORMAL;
 };
 
 struct vs_output
 {
 	float4 vPosition :SV_Position;
+	float3 Normal : NORMAL;
 };
 
 float4 RotationYaw(float4 Vec4,float Angle){
@@ -54,24 +56,32 @@ vs_output VSEntry(const vs_input input)
 	vs_output output;
 	
 	
-	float4 Input =  float4(input.vPosition,1);
 	
-
 	float4x4 OrthographicProjectionMatrix = {
 		1.0f,0.0f,0.0f,0.0f,
 		0.0f,1.0f,0.0f,0.0f,
 		0.0f,0.0f,-1.0f,0.0f,
 		0.0f,0.0f,0.0f,1.0f};
-	
 	float4 Scaling = {0.5f,0.5f,0.5f,1};
 	
 	
-	Input *= Scaling;
-	Input = RotationYaw(Input,RotationAngle);
-	Input = RotationPitch(Input,RotationAngle);
-	Input = RotationRoll(Input,0);
-	Input.x /= (Width/Height);
-	output.vPosition = mul(Input,OrthographicProjectionMatrix);
+	float4 ResultPos =  float4(input.vPosition,1);
+	ResultPos *= Scaling;
+	ResultPos = RotationYaw(ResultPos,RotationAngle);
+	ResultPos = RotationPitch(ResultPos,RotationAngle);
+	ResultPos = RotationRoll(ResultPos,0);
+	ResultPos.x /= (Width/Height);
+	output.vPosition = mul(ResultPos,OrthographicProjectionMatrix);
+	
+	float4 ResultNormal =  float4(input.Normal,1);
+	ResultNormal *= Scaling;
+	ResultNormal = RotationYaw(ResultNormal,RotationAngle);
+	ResultNormal = RotationPitch(ResultNormal,RotationAngle);
+	ResultNormal = RotationRoll(ResultNormal,0);
+	ResultNormal.x /= (Width/Height);
+	output.Normal = mul(ResultNormal,OrthographicProjectionMatrix);
+	
+	
 	return output;
 }
 

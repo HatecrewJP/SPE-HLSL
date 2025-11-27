@@ -140,33 +140,14 @@ internal void MessageLoop(ID3D11Device* Device){
 					GlobalTesselationActive ^=true;
 				}
 				else if(VKCode == 'C'){
+					static int x = 0;
 					ClearActivePipelineState();
-					PushPipelineState(&PipelineStateArray[6]);
+					PushPipelineState(&PipelineStateArray[x^=1]);
 				}
 				else if(VKCode == 'G'){
 					GlobalGeometryShaderActive ^=true;
 				}
 				
-				else if(VKCode == 'H'){
-					ClearActivePipelineState();
-					PushPipelineState(&PipelineStateArray[3]);
-					if(GlobalTesselationActive){
-						PushPipelineState(&PipelineStateArray[4]);
-					}
-					if(GlobalGeometryShaderActive){
-						PushPipelineState(&PipelineStateArray[5]);
-					}
-				}
-				else if(VKCode == 'S'){
-					ClearActivePipelineState();
-					PushPipelineState(&PipelineStateArray[0]);
-					if(GlobalTesselationActive){
-						PushPipelineState(&PipelineStateArray[1]);
-					}
-					if(GlobalGeometryShaderActive){
-						PushPipelineState(&PipelineStateArray[2]);
-					}
-				}
 				bool AltKeyWasDown = ((Message.lParam & (1 << 29)) != 0);
 				if((VKCode == VK_F4) && AltKeyWasDown){
 					GlobalRunning = false;
@@ -292,20 +273,30 @@ internal ID3D11Buffer* Win32CreateVertexBuffer(
 internal ID3D11InputLayout* Win32CreateVertexInputLayout(
 	ID3D11Device *Device, 
 	ID3D11DeviceContext *DeviceContext,
-	void *CompiledVSShaderCode, 
+	void *CompiledVSShaderCode,
 	size_t ShaderSize)
 {
-	D3D11_INPUT_ELEMENT_DESC VSInputElementDesc;
-	VSInputElementDesc.SemanticName = "SV_POSITION";
-	VSInputElementDesc.SemanticIndex = 0;
-	VSInputElementDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	VSInputElementDesc.InputSlot = 0;
-	VSInputElementDesc.AlignedByteOffset = 0;
-	VSInputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	VSInputElementDesc.InstanceDataStepRate = 0;
+	D3D11_INPUT_ELEMENT_DESC VSInputElementDescArray[2];
+	
+	
+	VSInputElementDescArray[0].SemanticName = "SV_POSITION";
+	VSInputElementDescArray[0].SemanticIndex = 0;
+	VSInputElementDescArray[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	VSInputElementDescArray[0].InputSlot = 0;
+	VSInputElementDescArray[0].AlignedByteOffset = 0;
+	VSInputElementDescArray[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	VSInputElementDescArray[0].InstanceDataStepRate = 0;
+
+	VSInputElementDescArray[1].SemanticName = "NORMAL";
+	VSInputElementDescArray[1].SemanticIndex = 0;
+	VSInputElementDescArray[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	VSInputElementDescArray[1].InputSlot = 0;
+	VSInputElementDescArray[1].AlignedByteOffset = 3*sizeof(float);
+	VSInputElementDescArray[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	VSInputElementDescArray[1].InstanceDataStepRate = 0;
 	
 	ID3D11InputLayout *VSInputLayout = NULL;
-	ASSERT(Device->CreateInputLayout(&VSInputElementDesc,1,CompiledVSShaderCode,ShaderSize,&VSInputLayout)==S_OK);
+	ASSERT(Device->CreateInputLayout(VSInputElementDescArray,ArrayCount(VSInputElementDescArray),CompiledVSShaderCode,ShaderSize,&VSInputLayout)==S_OK);
 	return VSInputLayout;
 	
 }
@@ -320,7 +311,7 @@ internal void CreateVBForIndexedGeometry(
 	IndexedGeometryObject NewObject;
 	
 	NewObject.VertexData = GeometryData;
-	NewObject.VertexSize = sizeof(float) * 3;
+	NewObject.VertexSize = sizeof(float) * 6;
 	NewObject.VertexCount = VertexCount;
 	NewObject.VertexDataSize = NewObject.VertexCount * NewObject.VertexSize;
 	
@@ -655,67 +646,19 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				VSCode.Code,
 				VSCode.Size);
 			}
-			
-			
-			
-			
-			//Square Object
-			float SquareVertices[] {
-				//Clockwise Triangles
-
-				//TopLeft
-				-1.0f, 1.0f,0.0f, //0
-				 1.0f, 1.0f,0.0f, //1
-				-1.0f,-1.0f,0.0f, //2
-				 1.0f,-1.0f,0.0f, //3
-				
-			};
-			
-			UINT SquareIndices[]{
-				0,1,2,
-				2,1,3,
-				
-			};
-			CreateVBForIndexedGeometry(
-				SquareVertices,
-				ArrayCount(SquareVertices),
-				SquareIndices,
-				ArrayCount(SquareIndices));
-			
-			
-			
-			//Hexagon Object
-			float HexagonVertices[]{
-				-0.50f, 0.00f, 0.0f, //0
-				-0.25f,-0.50f, 0.0f, //1
-				 0.25f,-0.50f, 0.0f, //2
-				 0.50f, 0.00f, 0.0f, //3
-				 0.25f, 0.50f, 0.0f, //4
-				-0.25f, 0.50f, 0.0f, //5
-			};
-			UINT HexagonIndices[]{
-				0,5,1,
-				5,4,1,
-				1,4,2,
-				4,3,2,
-			};
-			CreateVBForIndexedGeometry(
-				HexagonVertices,
-				ArrayCount(HexagonVertices),
-				HexagonIndices,
-				ArrayCount(HexagonIndices));
-			
+			float NormalValue = (float)sqrt(3);
 			
 			float CubeVertices[]{
-				0.00f,0.00f, 0.00f, //0
-				1.00f,0.00f, 0.00f, //1
-				0.00f,1.00f, 0.00f, //2
-				1.00f,1.00f, 0.00f, //3
-				0.00f,0.00f,-1.00f, //4
-				1.00f,0.00f,-1.00f, //5
-				0.00f,1.00f,-1.00f, //6
-				1.00f,1.00f,-1.00f, //7
+			/*Position*/	0.00f,0.00f, 0.00f, /*Normal*/ -NormalValue, -NormalValue,  NormalValue, //0
+			/*Position*/	1.00f,0.00f, 0.00f, /*Normal*/  NormalValue, -NormalValue,  NormalValue, //1
+			/*Position*/	0.00f,1.00f, 0.00f, /*Normal*/ -NormalValue,  NormalValue,  NormalValue, //2
+			/*Position*/	1.00f,1.00f, 0.00f, /*Normal*/  NormalValue,  NormalValue,  NormalValue, //3
+			/*Position*/	0.00f,0.00f,-1.00f, /*Normal*/ -NormalValue, -NormalValue, -NormalValue, //4
+			/*Position*/	1.00f,0.00f,-1.00f, /*Normal*/  NormalValue, -NormalValue, -NormalValue, //5
+			/*Position*/	0.00f,1.00f,-1.00f, /*Normal*/ -NormalValue,  NormalValue, -NormalValue, //6
+			/*Position*/	1.00f,1.00f,-1.00f, /*Normal*/  NormalValue,  NormalValue, -NormalValue, //7
 			};
+			
 			UINT CubeIndices[]{
 				//Front
 				0,2,3,
@@ -819,109 +762,6 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				OutputDebugStringA("SwapChain no Buffer\n");
 			}
 			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[0],1,
-					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-					GlobalVertexShaderArray[0],
-					nullptr,0,
-					nullptr,
-					nullptr,
-					nullptr,
-					nullptr,
-					&GlobalPixelShaderArray[0],
-					&GlobalRenderTargetView, 1,
-					"BackgroundSquare"));
-			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[0],1,
-					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-					GlobalVertexShaderArray[0],
-					nullptr,0,
-					nullptr,
-					nullptr,
-					GlobalGeometryShaderArray[0],
-					RasterizerState,
-					&GlobalAnimationShader,
-					&GlobalRenderTargetView, 1,
-					"SquareGeometryShader"));
-			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[0],1,
-					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(SquareIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
-					GlobalVertexShaderArray[0],
-					nullptr,0,
-					GlobalHullShaderArray[0],
-					GlobalDomainShaderArray[0],
-					nullptr,
-					RasterizerState,
-					&GlobalAnimationShader,
-					&GlobalRenderTargetView, 1,
-					"SquareTesselation"));
-			
-			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[1],1,
-					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-					GlobalVertexShaderArray[0],
-					nullptr,0,
-					nullptr,
-					nullptr,
-					nullptr,
-					nullptr,
-					&GlobalPixelShaderArray[0],
-					&GlobalRenderTargetView, 1,
-					"BackgroundHexagon"));
-			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[1],1,
-					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-					GlobalVertexShaderArray[0],
-					nullptr,0,
-					nullptr,
-					nullptr,
-					GlobalGeometryShaderArray[0],
-					RasterizerState,
-					&GlobalAnimationShader,
-					&GlobalRenderTargetView, 1,
-					"HexagonGeometryShader"));
-			
-			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[1],1,
-					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
-					(UINT*)&Zero,
-					GlobalIndexBufferArray[1],DXGI_FORMAT_R32_UINT,ArrayCount(HexagonIndices),
-					VSInputLayoutArray[0],
-					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
-					GlobalVertexShaderArray[0],
-					nullptr,1,
-					GlobalHullShaderArray[0],
-					GlobalDomainShaderArray[0],
-					nullptr,
-					RasterizerState,
-					&GlobalAnimationShader,
-					&GlobalRenderTargetView, 1,
-					"HexagonTesselation"));
-			
 			float ConstantBufferData[4] = {};
 			//Buffer for Angle
 			D3D11_BUFFER_DESC AngleConstantBufferDesc;
@@ -941,10 +781,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			ASSERT(AngleConstantBuffer);
 			
 			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[2],1,
-					(UINT*)&GlobalIndexedGeometryArray[2].VertexSize,
+					&GlobalVertexBufferArray[0],1,
+					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
 					(UINT*)&Zero,
-					GlobalIndexBufferArray[2],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
+					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
 					VSInputLayoutArray[1],
 					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 					GlobalVertexShaderArray[1],
@@ -957,10 +797,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalRenderTargetView, 1,
 					"Cube"));
 			AddPipelineStateToArray(BuildPipelineState(
-					&GlobalVertexBufferArray[2],1,
-					(UINT*)&GlobalIndexedGeometryArray[2].VertexSize,
+					&GlobalVertexBufferArray[0],1,
+					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
 					(UINT*)&Zero,
-					GlobalIndexBufferArray[2],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
+					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
 					VSInputLayoutArray[1],
 					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 					GlobalVertexShaderArray[1],
@@ -993,7 +833,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			CSState.ComputeShader = GlobalComputeShader;
 			
 			GlobalAnimationShader = GlobalPixelShaderArray[1];
-			PushPipelineState(&PipelineStateArray[7]);
+			PushPipelineState(&PipelineStateArray[0]);
 			
 
 			static int AnimationIndex = 0;
