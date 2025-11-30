@@ -2,10 +2,14 @@
 #define PI 3.14159265359
 #define DegreeToRad(x) ((x)*PI/180)
 
-cbuffer CBufferAngle{
+cbuffer CBuffer{
 	float RotationAngle;
 	float Width;
 	float Height;
+	float ColorR;
+	float ColorG;
+	float ColorB;
+	float ColorA;
 };
 struct vs_input
 {

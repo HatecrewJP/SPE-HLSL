@@ -29,6 +29,8 @@ struct GraphicsPipelineState{
 	ID3D11RasterizerState *RasterizerState;
 	//PS
 	ID3D11PixelShader* *PixelShader;
+	ID3D11Buffer* *PixelShaderConstantBufferArray;
+	UINT PixelShaderConstantBufferCount;
 	//OMS
 	ID3D11RenderTargetView* *RenderTargetViewArray;
 	UINT RenderTargetViewCount;
@@ -56,4 +58,13 @@ struct IndexedGeometryObject{
 	UINT IndexSize;
 	UINT IndexCount;
 	UINT IndexDataSize;
+};
+
+enum ShaderColor{
+	RED,
+	GREEN,
+	WHITE,
+	BLUE,
+	
+	SHADER_COLOR_COUNT
 };

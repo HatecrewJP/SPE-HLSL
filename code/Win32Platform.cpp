@@ -32,6 +32,8 @@ global_variable bool GlobalAnimationIsActive = false;
 global_variable bool GlobalTesselationActive = false;
 global_variable bool GlobalGeometryShaderActive = true;
 
+static ShaderColor GlobalActiveShaderColor = WHITE;
+
 
 global_variable GraphicsPipelineState PipelineStateArray[MAX_PIPELINE_STATES];
 global_variable unsigned int PipelineStateCount = 0;
@@ -63,7 +65,6 @@ global_variable ID3D11DomainShader* 	GlobalDomainShaderArray[64];
 global_variable ID3D11GeometryShader* 	GlobalGeometryShaderArray[64];
 global_variable ID3D11PixelShader* 		GlobalPixelShaderArray[MAX_PIXEL_SHADER_COUNT];
 
-global_variable ID3D11PixelShader *GlobalAnimationShader = nullptr;
 
 
 global_variable IndexedGeometryObject GlobalIndexedGeometryArray[64];
@@ -115,24 +116,19 @@ internal void MessageLoop(ID3D11Device* Device){
 			case WM_KEYDOWN:{
 				unsigned int VKCode = (unsigned int) Message.wParam;
 				if(VKCode == '1'){
-					if(GlobalPixelShaderInArrayCount >= 1 ) GlobalAnimationShader = GlobalPixelShaderArray[0];
+					if(GlobalPixelShaderInArrayCount >= 1 ) GlobalActiveShaderColor = WHITE;
 					
 				}
 				else if(VKCode == '2'){
-					if(GlobalPixelShaderInArrayCount >= 2 ) GlobalAnimationShader = GlobalPixelShaderArray[1];
+					if(GlobalPixelShaderInArrayCount >= 2 ) GlobalActiveShaderColor = RED;
 				}
 				else if(VKCode == '3'){
-					if(GlobalPixelShaderInArrayCount >= 3 ) GlobalAnimationShader = GlobalPixelShaderArray[2];
+					if(GlobalPixelShaderInArrayCount >= 3 ) GlobalActiveShaderColor = GREEN;
 				}
 				else if(VKCode == '4'){
-					if(GlobalPixelShaderInArrayCount >= 4 ) GlobalAnimationShader = GlobalPixelShaderArray[3];
+					if(GlobalPixelShaderInArrayCount >= 4 ) GlobalActiveShaderColor = BLUE;
 				}
-				else if(VKCode == '5'){
-					if(GlobalPixelShaderInArrayCount >= 5 ) GlobalAnimationShader = GlobalPixelShaderArray[4];
-				}
-				else if(VKCode == '6'){
-					if(GlobalPixelShaderInArrayCount >= 6 ) GlobalAnimationShader = GlobalPixelShaderArray[5];
-				}
+				
 				else if(VKCode == VK_SPACE){
 					GlobalAnimationIsActive ^= true;
 				}
@@ -396,6 +392,7 @@ internal UINT SetPipelineState(
 	DeviceContext->RSSetViewports(ViewportCount,ViewportArray);
 	//PS
 	DeviceContext->PSSetShader(*(PipelineState->PixelShader), nullptr, 0);
+	DeviceContext->PSSetConstantBuffers(0,PipelineState->PixelShaderConstantBufferCount,PipelineState->PixelShaderConstantBufferArray);
 	//OMS
 	DeviceContext->OMSetRenderTargets(PipelineState->RenderTargetViewCount, PipelineState->RenderTargetViewArray, nullptr);
 	return PipelineState->IndexCount;
@@ -419,6 +416,8 @@ internal GraphicsPipelineState BuildPipelineState(
 	ID3D11GeometryShader *GeometryShader,
 	ID3D11RasterizerState *RasterizerState,
 	ID3D11PixelShader* *PixelShader,
+	ID3D11Buffer* *PixelShaderConstantBufferArray,
+	UINT PixelShaderConstantBufferCount,
 	ID3D11RenderTargetView* *RenderTargetViewArray,
 	UINT RenderTargetViewCount,
 	char *Description = "Unknown"
@@ -442,6 +441,8 @@ internal GraphicsPipelineState BuildPipelineState(
 	NewPipelineState.GeometryShader = GeometryShader;
 	NewPipelineState.RasterizerState = RasterizerState;
 	NewPipelineState.PixelShader = PixelShader;
+	NewPipelineState.PixelShaderConstantBufferArray = PixelShaderConstantBufferArray;
+	NewPipelineState.PixelShaderConstantBufferCount = PixelShaderConstantBufferCount;
 	NewPipelineState.RenderTargetViewArray = RenderTargetViewArray;
 	NewPipelineState.RenderTargetViewCount = 1;
 	NewPipelineState.Description = Description;
@@ -553,6 +554,8 @@ internal void UpdateCSTexture(UINT Width, UINT Height){
 }
 
 
+
+
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow){
 	//Windows Window
 	WNDCLASSEXA WindowClass;
@@ -644,10 +647,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				1.00f,0.00f, 0.00f, //1
 				0.00f,1.00f, 0.00f, //2
 				1.00f,1.00f, 0.00f, //3
-				0.00f,0.00f,-1.00f, //4
-				1.00f,0.00f,-1.00f, //5
-				0.00f,1.00f,-1.00f, //6
-				1.00f,1.00f,-1.00f, //7
+				0.00f,0.00f, 1.00f, //4
+				1.00f,0.00f, 1.00f, //5
+				0.00f,1.00f, 1.00f, //6
+				1.00f,1.00f, 1.00f, //7
 			};
 			UINT CubeIndices[]{
 				//Front
@@ -677,10 +680,8 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			
 			
 			//Adding PixelShaders
-			Win32AddPixelShaderToArray(GlobalPixelShaderArray,Win32CreatePixelShader(GlobalDevice,L"PixelShaderWhite.hlsl","PSEntry","ps_5_0"));
-			Win32AddPixelShaderToArray(GlobalPixelShaderArray,Win32CreatePixelShader(GlobalDevice,L"PixelShaderRed.hlsl","PSEntry","ps_5_0"));
-			Win32AddPixelShaderToArray(GlobalPixelShaderArray,Win32CreatePixelShader(GlobalDevice,L"PixelShaderGreen.hlsl","PSEntry","ps_5_0"));
-			Win32AddPixelShaderToArray(GlobalPixelShaderArray,Win32CreatePixelShader(GlobalDevice,L"PixelShaderBlue.hlsl","PSEntry","ps_5_0"));
+			Win32AddPixelShaderToArray(GlobalPixelShaderArray,Win32CreatePixelShader(GlobalDevice,L"PixelShader.hlsl","PSEntry","ps_5_0"));
+			
 			
 			
 			
@@ -705,7 +706,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			//Rasterizer
 			D3D11_RASTERIZER_DESC RasterizerDesc;
 			RasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
-			RasterizerDesc.CullMode = D3D11_CULL_BACK;
+			RasterizerDesc.CullMode = D3D11_CULL_NONE;
 			RasterizerDesc.FrontCounterClockwise = FALSE;
 			RasterizerDesc.DepthBias = 0;
 			RasterizerDesc.DepthBiasClamp = 1.0f;
@@ -752,23 +753,27 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				OutputDebugStringA("SwapChain no Buffer\n");
 			}
 			
-			float ConstantBufferData[4] = {};
+			float ConstantBufferData[7] = {};
+			ConstantBufferData[3] = 1.0f;
+			ConstantBufferData[4] = 1.0f;
+			ConstantBufferData[5] = 1.0f;
+			ConstantBufferData[6] = 1.0f;
 			//Buffer for Angle
 			D3D11_BUFFER_DESC AngleConstantBufferDesc;
-			AngleConstantBufferDesc.ByteWidth = 16;
+			AngleConstantBufferDesc.ByteWidth = 32;
 			AngleConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 			AngleConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 			AngleConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 			AngleConstantBufferDesc.MiscFlags = 0;
 			AngleConstantBufferDesc.StructureByteStride = 0;
 			
-			D3D11_SUBRESOURCE_DATA AngleConstantBufferSubresourceData;
-			AngleConstantBufferSubresourceData.pSysMem = ConstantBufferData;
-			AngleConstantBufferSubresourceData.SysMemPitch = 0;
-			AngleConstantBufferSubresourceData.SysMemSlicePitch = 0;
-			ID3D11Buffer *AngleConstantBuffer = nullptr;
-			GlobalDevice->CreateBuffer(&AngleConstantBufferDesc,&AngleConstantBufferSubresourceData,&AngleConstantBuffer);
-			ASSERT(AngleConstantBuffer);
+			D3D11_SUBRESOURCE_DATA ConstantBufferSubresourceData;
+			ConstantBufferSubresourceData.pSysMem = ConstantBufferData;
+			ConstantBufferSubresourceData.SysMemPitch = 0;
+			ConstantBufferSubresourceData.SysMemSlicePitch = 0;
+			ID3D11Buffer *ConstantBuffer = nullptr;
+			GlobalDevice->CreateBuffer(&AngleConstantBufferDesc,&ConstantBufferSubresourceData,&ConstantBuffer);
+			ASSERT(ConstantBuffer);
 			
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
@@ -778,12 +783,13 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					VSInputLayoutArray[0],
 					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 					GlobalVertexShaderArray[0],
-					&AngleConstantBuffer,1,
+					&ConstantBuffer,1,
 					nullptr,
 					nullptr,
 					nullptr,
 					RasterizerState2,
-					&GlobalAnimationShader,
+					&GlobalPixelShaderArray[0],
+					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
 					"Cube"));
 			AddPipelineStateToArray(BuildPipelineState(
@@ -794,12 +800,13 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					VSInputLayoutArray[0],
 					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
 					GlobalVertexShaderArray[0],
-					&AngleConstantBuffer,1,
+					&ConstantBuffer,1,
 					nullptr,
 					nullptr,
 					GlobalGeometryShaderArray[0],
 					RasterizerState2,
-					&GlobalAnimationShader,
+					&GlobalPixelShaderArray[0],
+					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
 					"CubeGeometryShaderEnabled"));
 			
@@ -817,11 +824,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			CSState.UnorderedAccessViewCount = 1;
 			CSState.ComputeShader = GlobalComputeShader;
 			
-			GlobalAnimationShader = GlobalPixelShaderArray[1];
+			
 			PushPipelineState(&PipelineStateArray[0]);
 			
 
-			static int AnimationIndex = 0;
 			static unsigned int AnimationCount = 1;
 			GlobalRunning = true;
 			//Loop
@@ -863,10 +869,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				ConstantBufferData[2]=(float)Height;
 				
 				D3D11_MAPPED_SUBRESOURCE AngleSubresource = {};
-					GlobalDeviceContext->Map(AngleConstantBuffer,0,D3D11_MAP_WRITE_DISCARD,NULL,&AngleSubresource);
-					memcpy(AngleSubresource.pData,ConstantBufferData,4*sizeof(float));
+					GlobalDeviceContext->Map(ConstantBuffer,0,D3D11_MAP_WRITE_DISCARD,NULL,&AngleSubresource);
+					memcpy(AngleSubresource.pData,ConstantBufferData,sizeof(ConstantBufferData));
 					
-					GlobalDeviceContext->Unmap(AngleConstantBuffer,0);
+					GlobalDeviceContext->Unmap(ConstantBuffer,0);
 				
 				
 				for(unsigned int i = 0; i< ActivePipelineStateCount;i++){
@@ -882,13 +888,40 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				
 				
 				GlobalSwapChain->Present(1, 0);
-
-
+				
 				if (GlobalAnimationIsActive) {
 					AnimationCount = (AnimationCount + 1) % (60);
 					if (AnimationCount == 0) {
-						AnimationIndex = (AnimationIndex + 1) % GlobalPixelShaderInArrayCount;
-						GlobalAnimationShader = GlobalPixelShaderArray[AnimationIndex];
+						switch(GlobalActiveShaderColor){
+							case WHITE:{
+								ConstantBufferData[3] = 1.0f;
+								ConstantBufferData[4] = 0.0f;
+								ConstantBufferData[5] = 0.0f;
+								ConstantBufferData[6] = 1.0f;
+								GlobalActiveShaderColor = RED;
+							}break;
+							case RED:{
+								ConstantBufferData[3] = 0.0f;
+								ConstantBufferData[4] = 1.0f;
+								ConstantBufferData[5] = 0.0f;
+								ConstantBufferData[6] = 1.0f;
+								GlobalActiveShaderColor = GREEN;
+							}break;
+							case GREEN:{
+								ConstantBufferData[3] = 0.0f;
+								ConstantBufferData[4] = 0.0f;
+								ConstantBufferData[5] = 1.0f;
+								ConstantBufferData[6] = 1.0f;
+								GlobalActiveShaderColor = BLUE;
+							}break;
+							case BLUE:{
+								ConstantBufferData[3] = 1.0f;
+								ConstantBufferData[4] = 1.0f;
+								ConstantBufferData[5] = 1.0f;
+								ConstantBufferData[6] = 1.0f;
+								GlobalActiveShaderColor = WHITE;
+							}break;
+						}
 					}
 					ConstantBufferData[0] = (float)fmod((ConstantBufferData[0]+ 0.5f),360.0f);
 				}

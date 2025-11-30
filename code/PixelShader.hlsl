@@ -1,3 +1,12 @@
+cbuffer CBuffer{
+	float RotationAngle;
+	float Width;
+	float Height;
+	float ColorR;
+	float ColorG;
+	float ColorB;
+	float ColorA;
+};
 
 struct ps_input
 {
@@ -13,6 +22,6 @@ ps_output PSEntry(const ps_input input)
 {
 	ps_output output;
 	
-	output.color = float4(0,0,1,1);
+	output.color = float4(ColorR,ColorG,ColorB,ColorA);
 	return output;
 }
