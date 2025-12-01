@@ -9,7 +9,6 @@
 #define MB(x) KB(x)*1024
 #define GB(x) MB(x)*1024
 
-
 #include <d3d11.h>
 #include <dxgi1_2.h>
 #include <d3dcompiler.h>
@@ -263,17 +262,17 @@ internal ID3D11InputLayout* Win32CreateVertexInputLayout(
 	void *CompiledVSShaderCode, 
 	size_t ShaderSize)
 {
-	D3D11_INPUT_ELEMENT_DESC VSInputElementDesc;
-	VSInputElementDesc.SemanticName = "SV_POSITION";
-	VSInputElementDesc.SemanticIndex = 0;
-	VSInputElementDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	VSInputElementDesc.InputSlot = 0;
-	VSInputElementDesc.AlignedByteOffset = 0;
-	VSInputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	VSInputElementDesc.InstanceDataStepRate = 0;
+	D3D11_INPUT_ELEMENT_DESC VSInputElementDescArray[1];
+	VSInputElementDescArray[0].SemanticName = "SV_POSITION";
+	VSInputElementDescArray[0].SemanticIndex = 0;
+	VSInputElementDescArray[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	VSInputElementDescArray[0].InputSlot = 0;
+	VSInputElementDescArray[0].AlignedByteOffset = 0;
+	VSInputElementDescArray[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	VSInputElementDescArray[0].InstanceDataStepRate = 0;
 	
 	ID3D11InputLayout *VSInputLayout = NULL;
-	ASSERT(Device->CreateInputLayout(&VSInputElementDesc,1,CompiledVSShaderCode,ShaderSize,&VSInputLayout)==S_OK);
+	ASSERT(Device->CreateInputLayout(VSInputElementDescArray,1,CompiledVSShaderCode,ShaderSize,&VSInputLayout)==S_OK);
 	return VSInputLayout;
 	
 }
@@ -620,14 +619,14 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			
 			
 			float CubeVertices[]{
-				0.00f,0.00f, 0.00f, //0
-				1.00f,0.00f, 0.00f, //1
-				0.00f,1.00f, 0.00f, //2
-				1.00f,1.00f, 0.00f, //3
-				0.00f,0.00f, 1.00f, //4
-				1.00f,0.00f, 1.00f, //5
-				0.00f,1.00f, 1.00f, //6
-				1.00f,1.00f, 1.00f, //7
+				/*Pos*/ 0.00f,0.00f, 0.00f,
+				/*Pos*/ 1.00f,0.00f, 0.00f,
+				/*Pos*/ 0.00f,1.00f, 0.00f,
+				/*Pos*/ 1.00f,1.00f, 0.00f,
+				/*Pos*/ 0.00f,0.00f, 1.00f,
+				/*Pos*/ 1.00f,0.00f, 1.00f,
+				/*Pos*/ 0.00f,1.00f, 1.00f,
+				/*Pos*/ 1.00f,1.00f, 1.00f,
 			};
 			UINT CubeIndices[]{
 				//Front
