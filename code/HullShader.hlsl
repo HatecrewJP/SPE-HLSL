@@ -28,12 +28,12 @@ ConstantOutputType PatchConstantFunction(InputPatch<HsInput,3> inputPatch, uint 
 	Output.Edges[1] = 1;
 	Output.Edges[2] = 1;
 	
-	Output.inside = 2;
+	Output.inside = 3;
 	
 	return Output;
 }
 [domain("tri")]
-[partitioning("integer")]
+[partitioning("pow2")]
 [outputtopology("triangle_cw")]
 [outputcontrolpoints(3)]
 [patchconstantfunc("PatchConstantFunction")]

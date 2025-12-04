@@ -14,7 +14,6 @@ struct GSInput{
 [maxvertexcount(9)]
 void GSEntry(triangle GSInput InputTri[3] : SV_Position, inout TriangleStream<GSOutput> OutStream){
 
-
 	float4 PlaneVec1 = InputTri[1].Pos-InputTri[0].Pos;
 	float4 PlaneVec2 = InputTri[2].Pos-InputTri[1].Pos;
 	float3 FaceNormal = normalize(cross(PlaneVec1.xyz,PlaneVec2.xyz));

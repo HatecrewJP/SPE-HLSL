@@ -556,7 +556,11 @@ internal void UpdateCSTexture(UINT Width, UINT Height){
 	VirtualFree(CSShaderResourceData, 0, MEM_RELEASE);
 }
 
+internal void CycleShaderColors(ShaderColor *CurrentShaderColor){
 
+	*CurrentShaderColor = ShaderColor((*CurrentShaderColor + 1) % SHADER_COLOR_COUNT);
+	
+}
 
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow){
@@ -717,7 +721,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			
 			//Rasterizer
 			D3D11_RASTERIZER_DESC RasterizerDesc1;
-			RasterizerDesc1.FillMode = D3D11_FILL_SOLID;
+			RasterizerDesc1.FillMode = D3D11_FILL_WIREFRAME;
 			RasterizerDesc1.CullMode = D3D11_CULL_NONE;
 			RasterizerDesc1.FrontCounterClockwise = FALSE;
 			RasterizerDesc1.DepthBias = 0;
@@ -982,30 +986,29 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 								ConstantBufferData[4] = 0.0f;
 								ConstantBufferData[5] = 0.0f;
 								ConstantBufferData[6] = 1.0f;
-								GlobalActiveShaderColor = RED;
+								
 							}break;
 							case RED:{
 								ConstantBufferData[3] = 0.0f;
 								ConstantBufferData[4] = 1.0f;
 								ConstantBufferData[5] = 0.0f;
 								ConstantBufferData[6] = 1.0f;
-								GlobalActiveShaderColor = GREEN;
+								
 							}break;
 							case GREEN:{
 								ConstantBufferData[3] = 0.0f;
 								ConstantBufferData[4] = 0.0f;
 								ConstantBufferData[5] = 1.0f;
 								ConstantBufferData[6] = 1.0f;
-								GlobalActiveShaderColor = BLUE;
 							}break;
 							case BLUE:{
 								ConstantBufferData[3] = 1.0f;
 								ConstantBufferData[4] = 1.0f;
 								ConstantBufferData[5] = 1.0f;
 								ConstantBufferData[6] = 1.0f;
-								GlobalActiveShaderColor = WHITE;
 							}break;
 						}
+						CycleShaderColors(&GlobalActiveShaderColor);
 					}
 					ConstantBufferData[0] = (float)fmod((ConstantBufferData[0]+ 0.5f),360.0f);
 				}

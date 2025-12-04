@@ -24,5 +24,8 @@ ps_output PSEntry(const ps_input input)
 {
 	ps_output output;
 	output.color = input.Color;
+	[branch]if(input.Color.x == 1.0f){
+		output.color = float4(ColorR,ColorG,ColorB,ColorA);
+	}
 	return output;
 }
