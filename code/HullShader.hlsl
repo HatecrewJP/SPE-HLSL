@@ -28,7 +28,7 @@ ConstantOutputType PatchConstantFunction(InputPatch<HsInput,3> inputPatch, uint 
 	Output.Edges[1] = 1;
 	Output.Edges[2] = 1;
 	
-	Output.inside = 3;
+	Output.inside = 2;
 	
 	return Output;
 }

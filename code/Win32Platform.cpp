@@ -102,7 +102,7 @@ internal void Win32ProcessError(DWORD Error){
 	exit(-1);
 }
 #define ResetModeAndOffset() TesselationMode = 0; PipelineStateOffset = 4;
-internal void MessageLoop(ID3D11Device* Device){
+internal void MessageLoop(ID3D11Device* Device, float *ConstantBuffer){
 	MSG Message;
 	while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE)){
 		static int TesselationMode = 0, PipelineStateOffset = 1;
@@ -116,31 +116,37 @@ internal void MessageLoop(ID3D11Device* Device){
 					//PassThrough
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[0]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				else if(VKCode == '2'){
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[7]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				else if(VKCode == '3'){
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[8]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				else if(VKCode == '4'){
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[9]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				else if(VKCode == '5'){
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[10]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				else if(VKCode == '6'){
 					ClearActivePipelineState();
 					PushPipelineState(&PipelineStateArray[11]);
+					ConstantBuffer[0] = 200.0f;
 					ResetModeAndOffset();
 				}
 				
@@ -844,10 +850,10 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					nullptr,
 					nullptr,
 					nullptr,
-					&GlobalPixelShaderArray,
+					GlobalPixelShaderArray,
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"PassThrough"));
+					"0:PassThrough"));
 			
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
@@ -865,7 +871,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"Cube"));
+					"1:Cube"));
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
 					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
@@ -882,7 +888,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"CubeGeometryShaderEnabled"));
+					"2:CubeGeometryShaderEnabled"));
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
 					(UINT*)&GlobalIndexedGeometryArray[0].VertexSize,
@@ -899,7 +905,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"CubeGeometryTesselationEnabled"));
+					"3:CubeGeometryTesselationEnabled"));
 					
 					
 			AddPipelineStateToArray(BuildPipelineState(
@@ -918,7 +924,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"Tri"));
+					"4:Tri"));
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[1],1,
 					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
@@ -935,7 +941,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"TriGeometryShaderEnabled"));
+					"5:TriGeometryShaderEnabled"));
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[1],1,
 					(UINT*)&GlobalIndexedGeometryArray[1].VertexSize,
@@ -952,7 +958,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					&ConstantBuffer,1,
 					&GlobalRenderTargetView, 1,
-					"TriGeometryTesselationEnabled"));
+					"6:TriGeometryTesselationEnabled"));
 			
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
@@ -970,7 +976,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[0],
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"RasterizerSet"));
+					"7:RasterizerSet"));
 						
 			
 			AddPipelineStateToArray(BuildPipelineState(
@@ -989,7 +995,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[0],
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"VSActive"));
+					"8:VSActive"));
 				
 					
 			AddPipelineStateToArray(BuildPipelineState(
@@ -1008,7 +1014,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[0],
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"Tesselation"));
+					"9:Tesselation"));
 			
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
@@ -1016,7 +1022,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					(UINT*)&Zero,
 					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
 					VSPassTroughInputLayout,
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
 					VSCube,
 					&ConstantBuffer,1,
 					GlobalHullShaderArray[0],
@@ -1026,7 +1032,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[0],
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"GeometryShader"));
+					"10:GeometryShader"));
 					
 			AddPipelineStateToArray(BuildPipelineState(
 					&GlobalVertexBufferArray[0],1,
@@ -1034,7 +1040,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					(UINT*)&Zero,
 					GlobalIndexBufferArray[0],DXGI_FORMAT_R32_UINT,ArrayCount(CubeIndices),
 					VSPassTroughInputLayout,
-					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+					D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST,
 					VSCube,
 					&ConstantBuffer,1,
 					GlobalHullShaderArray[0],
@@ -1044,7 +1050,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					&GlobalPixelShaderArray[1],
 					nullptr,0,
 					&GlobalRenderTargetView, 1,
-					"PixelShader"));
+					"11:PixelShader"));
 			
 			
 			
@@ -1071,7 +1077,7 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 			GlobalRunning = true;
 			//Loop
 			while(GlobalRunning){
-				MessageLoop(GlobalDevice);
+				MessageLoop(GlobalDevice,ConstantBufferData);
 				if(!GlobalRunning) break;
 				
 				ASSERT(GetClientRect(Window,&ClientRect));

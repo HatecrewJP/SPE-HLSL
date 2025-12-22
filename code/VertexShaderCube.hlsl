@@ -21,6 +21,7 @@ struct vs_output
 {
 	float4 vPosition :SV_Position;
 	float4 Color : COLOR;
+	float3 Normal : NORMAL;
 };
 
 float4 RotationYaw(float4 Vec4,float Angle){
@@ -79,6 +80,7 @@ vs_output VSEntry(const vs_input input)
 	Input.x /= (Width/Height);
 	output.vPosition = mul(Input,OrthographicProjectionMatrix);
 	output.Color =  input.Color;
+	output.Normal = float3(0,0,0);
 	return output;
 }
 
