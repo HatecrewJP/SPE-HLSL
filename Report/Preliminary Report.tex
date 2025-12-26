@@ -1,5 +1,7 @@
 \documentclass[acmsmall,screen,nonacm,review]{acmart}
 \usepackage{minted}
+
+
 \title{An Introduction to HLSL}
 
 \begin{document}
@@ -8,7 +10,115 @@
 \section{Introduction}
 
 \section{HLSL Language}
+The HLSL Language is similar to the c programming language.
+A lot of it has been taken over from c, but some new things, that help programming the graphics pipeline, have been added.
+This section describes the language syntax.
+
 \subsection{Variable Syntax}
+In HLSL variables are declared with this syntax:
+
+\small[Storage\_Class] [Type\_Modifier] Type Name[Index] [: Semantic] [: Packoffset] [: Register]; [Annotations] [= Initial\_Value] 
+\normalsize
+
+Storage\_Class:
+
+Parameter that gives the compiler a hint about scope and lifetime.
+
+Examples:
+
+static: The variable is initialized once and persist after leaving the scope.
+
+uniform: The variable's data remains the same throughout the execution of the shader.
+
+
+Type\_Modifier:
+
+Optional modifier.
+
+Example:
+
+const: The variable cannot be changed.
+
+Type:
+The type of the data being stored in the variable. It can be any of the HLSL Data Types.
+
+Examples:
+int: signed 32-bit integer
+dword: unsigned 32-bit integer  
+double: 64-bit floating point number
+
+Name:
+
+An ASCII String that uniquely identifies the variable.
+
+Index:
+
+Providing a positive Integer as the Index makes the variable an Array.
+
+Examples:
+\begin{minted}{hlsl}
+  float MyArray1[3] //An Array of 3 floats.
+  uint MyArray2[32] //An Array of 32 uints. 
+\end{minted}
+
+
+Semantic:
+
+Semantics are Strings attached to the input and output variables of shaders.
+These Strings are used by the graphics pipeline to identify the meaning of the variable.
+If there are multiple variables with the same semantic meaning, an Integer can be appended to the semantic.
+
+Examples:
+\begin{minted}{hlsl}
+  float4 Position : POSITION; //Position is treated as a Vertex Position.
+  float2 vPosition : VPOS;    //vPosition is treated as a Pixel Location. 
+  float3 Color : COLOR1;      //Color is treated as a Color.
+\end{minted}
+
+
+Packoffset:
+
+Each register has 4 32-bit components. When passing variables in a constant buffer to the GPU, some variables may not use all 4 subcomponents.
+If each variable uses only one of those components and has its own register, a lot of memory would be wasted.
+To avoid wasting memory, data can be packed into registers, if the variables components are small enough to fully fit into the register.
+
+To retrieve packed data and store it into a variable, packoffset needs the buffer slot and component slot, from which the data should be used.
+
+Examples:
+
+Valid:
+
+\begin{minted}{hlsl}
+  cbuffer CBuffer{
+	float RotationAngle : packoffset(c0.x);
+	float Width  : packoffset(c0.y);
+	float Height : packoffset(c0.z);
+	float ColorR : packoffset(c1.x);
+	float ColorG : packoffset(c1.y);
+	float ColorB : packoffset(c1.z);
+	float ColorA : packoffset(c1.w);
+};
+\end{minted}
+
+Invalid:
+
+\begin{minted}{hlsl}
+  cbuffer{
+      float2 x: packoffset(c0);   // x uses 2 components 
+      float3 y: packoffset(c0.z); // y uses 3 components
+  }
+\end{minted}
+
+Register:
+
+
+
+
+Annotations:
+
+Initial\_Value:
+
+
 \subsection{Data Types}
 \subsubsection{Scalar}
 \subsubsection{Vector}

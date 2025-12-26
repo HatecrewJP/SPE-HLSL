@@ -5,4 +5,7 @@
 *.log
 *.synctex*
 *.pdf
+*.lua
+*.markdown.in
+\_minted
 \build

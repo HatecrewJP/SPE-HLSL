@@ -815,14 +815,14 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 				OutputDebugStringA("SwapChain no Buffer\n");
 			}
 			
-			float ConstantBufferData[7] = {};
-			ConstantBufferData[3] = 1.0f;
+			float ConstantBufferData[64] = {};
 			ConstantBufferData[4] = 1.0f;
 			ConstantBufferData[5] = 1.0f;
-			ConstantBufferData[6] = 1.0f;
+			ConstantBufferData[8] = 1.0f;
+			ConstantBufferData[9] = 1.0f;
 			//Buffer for Angle
 			D3D11_BUFFER_DESC AngleConstantBufferDesc;
-			AngleConstantBufferDesc.ByteWidth = 32;
+			AngleConstantBufferDesc.ByteWidth = sizeof(ConstantBufferData);
 			AngleConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 			AngleConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 			AngleConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -1139,30 +1139,30 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 					if (AnimationCount == 0) {
 						switch(GlobalActiveShaderColor){
 							case WHITE:{
-								ConstantBufferData[3] = 1.0f;
-								ConstantBufferData[4] = 0.0f;
+								ConstantBufferData[4] = 1.0f;
 								ConstantBufferData[5] = 0.0f;
-								ConstantBufferData[6] = 1.0f;
+								ConstantBufferData[8] = 0.0f;
+								ConstantBufferData[9] = 1.0f;
 								
 							}break;
 							case RED:{
-								ConstantBufferData[3] = 0.0f;
-								ConstantBufferData[4] = 1.0f;
-								ConstantBufferData[5] = 0.0f;
-								ConstantBufferData[6] = 1.0f;
+								ConstantBufferData[4] = 0.0f;
+								ConstantBufferData[5] = 1.0f;
+								ConstantBufferData[8] = 0.0f;
+								ConstantBufferData[9] = 1.0f;
 								
 							}break;
 							case GREEN:{
-								ConstantBufferData[3] = 0.0f;
 								ConstantBufferData[4] = 0.0f;
-								ConstantBufferData[5] = 1.0f;
-								ConstantBufferData[6] = 1.0f;
+								ConstantBufferData[5] = 0.0f;
+								ConstantBufferData[8] = 1.0f;
+								ConstantBufferData[9] = 1.0f;
 							}break;
 							case BLUE:{
-								ConstantBufferData[3] = 1.0f;
 								ConstantBufferData[4] = 1.0f;
 								ConstantBufferData[5] = 1.0f;
-								ConstantBufferData[6] = 1.0f;
+								ConstantBufferData[8] = 1.0f;
+								ConstantBufferData[9] = 1.0f;
 							}break;
 						}
 						CycleShaderColors(&GlobalActiveShaderColor);

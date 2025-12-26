@@ -1,11 +1,11 @@
-cbuffer CBuffer{
-	float RotationAngle;
-	float Width;
-	float Height;
-	float ColorR;
-	float ColorG;
-	float ColorB;
-	float ColorA;
+cbuffer CBuffer : register(b0){
+	float RotationAngle : packoffset(c0.x);
+	float Width  : packoffset(c0.y);
+	float Height : packoffset(c0.z);
+	float ColorR : packoffset(c1.x);
+	float ColorG : packoffset(c1.y);
+	float ColorB : packoffset(c2.x);
+	float ColorA : packoffset(c2.y);
 };
 
 struct ps_input

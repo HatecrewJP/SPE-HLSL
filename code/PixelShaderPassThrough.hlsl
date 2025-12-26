@@ -12,6 +12,9 @@ struct ps_output
 
 ps_output PSEntry(const ps_input input)
 {
+	
+
+
 	ps_output output;
 	output.color = input.Color;
 	return output;

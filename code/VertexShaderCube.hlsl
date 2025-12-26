@@ -10,6 +10,7 @@ cbuffer CBuffer{
 	float ColorG;
 	float ColorB;
 	float ColorA;
+	
 };
 struct vs_input
 {
